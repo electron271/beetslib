@@ -98,6 +98,11 @@ class BeetsLib(BeetsPlugin):
 
         for album, result in needs_replaygain_results:
             result.wait()
-            self._replaygain_album([str(opus_file) for _, opus_file in starmap])
+            self._replaygain_album(
+                [str(opus_file) for _, opus_file in starmap], album.album
+            )
+
+        for result in results:
+            result.wait()
 
         ui.print_("done")
