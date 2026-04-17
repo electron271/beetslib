@@ -32,13 +32,15 @@ class BeetsLib(BeetsPlugin):
                 "--ignorelength",
                 flac_file,
                 opus_file,
-            ]
+            ],
+            capture_output=True,
         )
         self._log.info(f"done converting {flac_file} to {opus_file}")
 
     def _replaygain_album(self, files):
         subprocess.run(
-            ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files]
+            ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
+            capture_output=True,
         )
 
     def _process_album(self, album: Album):
