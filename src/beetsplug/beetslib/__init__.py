@@ -78,9 +78,7 @@ class BeetsLib(BeetsPlugin):
             return
 
         albums = lib.albums()
-        singletons = lib.items(
-            query=FieldQuery("album", None)
-        )  # shit ass solution to an issue i didnt see coming
+        singletons = [i for i in lib.items() if i.album is None]  # shit ass solution to an issue i didnt see coming
 
         ui.print_("converting library...")
         needs_update_results: list[tuple[Album | Item, AsyncResult]] = []
