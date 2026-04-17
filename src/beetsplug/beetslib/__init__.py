@@ -69,7 +69,7 @@ class BeetsLib(BeetsPlugin):
                 )
             )
 
-        self.pool.starmap_async(self._flac_to_opus, starmap).wait()
+        self.pool.starmap(self._flac_to_opus, starmap)
 
         self._log.info(f"calculating replaygain for converted album: {album.album}")
         self._replaygain_album([str(opus_file) for _, opus_file in starmap])
