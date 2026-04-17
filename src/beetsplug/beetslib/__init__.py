@@ -68,7 +68,7 @@ class BeetsLib(BeetsPlugin):
                     ).with_suffix(".opus"),
                 )
             )
-
+        self._log.debug(starmap)
         self.pool.starmap(self._flac_to_opus, starmap)
 
         self._log.info(f"calculating replaygain for converted album: {album.album}")
