@@ -21,7 +21,8 @@ class BeetsLib(BeetsPlugin):
         ):  # im just doing this instead of exists() to raise an error if its a file
             self.opusdir.mkdir(parents=False, exist_ok=True)
 
-    def _flac_to_opus(self, flac_file, opus_file):
+    def _flac_to_opus(self, files: tuple[Path, Path]):
+        flac_file, opus_file = files
         self._log.info(f"converting {flac_file} to {opus_file}")
         subprocess.run(
             [
@@ -68,8 +69,7 @@ class BeetsLib(BeetsPlugin):
                     ).with_suffix(".opus"),
                 )
             )
-        self._log.debug(starmap)
-        self.pool.starmap(self._flac_to_opus, starmap)
+        self.pool.map(self._flac_to_opus, starmap)
 
         self._log.info(f"calculating replaygain for converted album: {album.album}")
         self._replaygain_album([str(opus_file) for _, opus_file in starmap])
