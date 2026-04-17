@@ -72,7 +72,11 @@ class BeetsLib(BeetsPlugin):
 
             results.append(
                 self.pool.apply_async(
-                    self._replaygain_album, ([str(track.filepath) for track in tracks],)
+                    self._replaygain_album,
+                    (
+                        [str(track.filepath) for track in tracks],
+                        album.album,
+                    ),
                 )
             )
 
