@@ -15,7 +15,7 @@ class BeetsLib(BeetsPlugin):
         self.config.add({"opusdir": "/root/Music"})
 
         self.opusdir = Path(self.config["opusdir"].get(str))
-        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 2)
+        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 4)
 
         if (
             not self.opusdir.is_dir()
@@ -39,7 +39,7 @@ class BeetsLib(BeetsPlugin):
                 flac_file,
                 opus_file,
             ],
-            capture_output=True,
+            capture_output=False,
         )
         self._log.info(
             f"done converting {flac_file} to {opus_file}"
@@ -78,7 +78,9 @@ class BeetsLib(BeetsPlugin):
             return
 
         albums = lib.albums()
-        singletons = [i for i in lib.items() if i.album is None]  # shit ass solution to an issue i didnt see coming
+        singletons = [
+            i for i in lib.items() if i.album is None
+        ]  # shit ass solution to an issue i didnt see coming
 
         ui.print_("converting library...")
         needs_update_results: list[tuple[Album | Item, AsyncResult]] = []
@@ -161,7 +163,10 @@ class BeetsLib(BeetsPlugin):
             results.append(
                 self.pool.apply_async(
                     self._replaygain_album,
-                    ([str(opus_file) for _, opus_file in starmap], album.album or album.filepath.name),
+                    (
+                        [str(opus_file) for _, opus_file in starmap],
+                        album.album or album.filepath.name,
+                    ),
                 )
             )
 
