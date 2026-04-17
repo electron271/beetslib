@@ -38,10 +38,12 @@ class BeetsLib(BeetsPlugin):
         self._log.info(f"done converting {flac_file} to {opus_file}")
 
     def _replaygain_album(self, files):
+        self._log.debug(f"calculating replaygain for files: {files}")
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
             capture_output=True,
         )
+        self._log.debug(f"done calculating replaygain for files: {files}")
 
     def _process_album(self, album: Album):
         self._log.info(f"processing album: {album.album}")
