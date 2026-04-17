@@ -14,7 +14,7 @@ class BeetsLib(BeetsPlugin):
         self.config.add({"opusdir": "/root/Music"})
 
         self.opusdir = Path(self.config["opusdir"].get(str))
-        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 4)
+        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 2)
 
         if (
             not self.opusdir.is_dir()
