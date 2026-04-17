@@ -159,12 +159,27 @@ class BeetsLib(BeetsPlugin):
             )
 
         for album, result in needs_replaygain_results:
+            tracks = []
+            if isinstance(album, Album):
+                tracks = [
+                    Path(
+                        track.destination(basedir=self.opusdir.__bytes__()).decode()
+                    ).with_suffix(".opus")
+                    for track in album.items()
+                ]
+            elif isinstance(album, Item):
+                tracks = [
+                    Path(
+                        album.destination(basedir=self.opusdir.__bytes__()).decode()
+                    ).with_suffix(".opus")
+                ]
+
             result.wait()
             results.append(
                 self.pool.apply_async(
                     self._replaygain_album,
                     (
-                        [str(opus_file) for _, opus_file in starmap],
+                        tracks,
                         album.album or album.filepath.name,
                     ),
                 )
