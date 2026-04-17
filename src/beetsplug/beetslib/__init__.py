@@ -2,7 +2,8 @@ import os
 from pathlib import Path
 import subprocess
 from beets import ui
-from beets.library import Album, Library
+from beets.dbcore import FieldQuery
+from beets.library import Album, Item, Library
 from beets.plugins import BeetsPlugin
 from beets.ui import Subcommand
 from multiprocessing.pool import AsyncResult, ThreadPool
@@ -21,8 +22,10 @@ class BeetsLib(BeetsPlugin):
         ):  # im just doing this instead of exists() to raise an error if its a file
             self.opusdir.mkdir(parents=False, exist_ok=True)
 
-    def _flac_to_opus(self, flac_file: Path, opus_file: Path):
-        self._log.info(f"converting {flac_file} to {opus_file}")
+    def _flac_to_opus(self, flac_file: Path, opus_file: Path, quiet: bool = False):
+        self._log.info(
+            f"converting {flac_file} to {opus_file}"
+        ) if not quiet else self._log.debug(f"converting {flac_file} to {opus_file}")
         if not opus_file.parent.exists():
             opus_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -38,15 +41,27 @@ class BeetsLib(BeetsPlugin):
             ],
             capture_output=True,
         )
-        self._log.info(f"done converting {flac_file} to {opus_file}")
+        self._log.info(
+            f"done converting {flac_file} to {opus_file}"
+        ) if not quiet else self._log.debug(
+            f"done converting {flac_file} to {opus_file}"
+        )
 
-    def _replaygain_album(self, files, album_name):
-        self._log.info(f"calculating replaygain for album: {album_name}")
+    def _replaygain_album(self, files, album_name, quiet: bool = False):
+        self._log.info(
+            f"calculating replaygain for album: {album_name}"
+        ) if not quiet else self._log.debug(
+            f"calculating replaygain for album: {album_name}"
+        )
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
             capture_output=True,
         )
-        self._log.info(f"done calculating replaygain for album: {album_name}")
+        self._log.info(
+            f"done calculating replaygain for album: {album_name}"
+        ) if not quiet else self._log.debug(
+            f"done calculating replaygain for album: {album_name}"
+        )
 
     def commands(self):
         reconvert = Subcommand(
@@ -63,19 +78,27 @@ class BeetsLib(BeetsPlugin):
             return
 
         albums = lib.albums()
+        singletons = lib.items(
+            query=FieldQuery("album", None)
+        )  # shit ass solution to an issue i didnt see coming
 
-        ui.print_("converting albums...")
-        results = []
-        needs_replaygain_results: list[tuple[Album, AsyncResult]] = []
+        ui.print_("converting library...")
+        needs_update_results: list[tuple[Album | Item, AsyncResult]] = []
+        needs_replaygain_results: list[tuple[Album | Item, AsyncResult]] = []
+        results: list[AsyncResult] = []
+
         for album in albums:
             tracks = album.items()
 
-            results.append(
-                self.pool.apply_async(
-                    self._replaygain_album,
-                    (
-                        [str(track.filepath) for track in tracks],
-                        album.album,
+            needs_update_results.append(
+                (
+                    album,
+                    self.pool.apply_async(
+                        self._replaygain_album,
+                        (
+                            [str(track.filepath) for track in tracks],
+                            album.album,
+                        ),
                     ),
                 )
             )
@@ -100,13 +123,57 @@ class BeetsLib(BeetsPlugin):
                 (album, self.pool.starmap_async(self._flac_to_opus, starmap))
             )
 
+        for singleton in singletons:
+            needs_update_results.append(
+                (
+                    singleton,
+                    self.pool.apply_async(
+                        self._replaygain_album,
+                        (
+                            [singleton.filepath],
+                            singleton.filepath.name,
+                        ),
+                    ),
+                )
+            )
+
+            if track.format != "FLAC":  # TODO: add better handling for this probably
+                raise ValueError(f"track {track.filepath} isnt a flac")
+
+            self._log.debug(f"processing track: {track.filepath}")
+            needs_replaygain_results.append(
+                (
+                    album,
+                    self.pool.apply_async(
+                        self._flac_to_opus,
+                        (
+                            track.filepath,
+                            Path(
+                                track.destination(
+                                    basedir=self.opusdir.__bytes__()
+                                ).decode()
+                            ).with_suffix(".opus"),
+                        ),
+                    ),
+                )
+            )
+
         for album, result in needs_replaygain_results:
             result.wait()
-            self._replaygain_album(
-                [str(opus_file) for _, opus_file in starmap], album.album
+            results.append(
+                self.pool.apply_async(
+                    self._replaygain_album,
+                    ([str(opus_file) for _, opus_file in starmap], album.album or album.filepath.name),
+                )
             )
+
+        for album, result in needs_update_results:
+            result.wait()
+            results.append(self.pool.apply_async(album.store, ()))
 
         for result in results:
             result.wait()
+
+        self.pool.map(lambda x: x.store(), albums)
 
         ui.print_("done")
