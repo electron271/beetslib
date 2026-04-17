@@ -39,7 +39,7 @@ class BeetsLib(BeetsPlugin):
                 flac_file,
                 opus_file,
             ],
-            capture_output=False,
+            capture_output=True,
         )
         self._log.info(
             f"done converting {flac_file} to {opus_file}"
