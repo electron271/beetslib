@@ -42,10 +42,10 @@ class BeetsLib(BeetsPlugin):
         )
 
     def _process_album(self, album: Album):
-        self._log.info(f"processing album: {album.title}")
+        self._log.info(f"processing album: {album.album}")
         tracks = album.items()
 
-        self._log.info(f"calculating replaygain for album: {album.title}")
+        self._log.info(f"calculating replaygain for album: {album.album}")
         replaygain = self.pool.apply_async(
             self._replaygain_album, ([str(track.path) for track in tracks],)
         )
@@ -53,7 +53,7 @@ class BeetsLib(BeetsPlugin):
         starmap = []
         for track in tracks:
             if track.format != "FLAC":  # TODO: add better handling for this probably
-                raise ValueError(f"track {track.title} isnt a flac")
+                raise ValueError(f"track {track.path} isnt a flac")
 
             starmap.append(
                 (
@@ -66,13 +66,13 @@ class BeetsLib(BeetsPlugin):
 
         self.pool.starmap(self._flac_to_opus, starmap)
 
-        self._log.info(f"calculating replaygain for converted album: {album.title}")
+        self._log.info(f"calculating replaygain for converted album: {album.album}")
         self._replaygain_album([str(opus_file) for _, opus_file in starmap])
 
         if not replaygain.ready():
             replaygain.wait()
 
-        self._log.info(f"done processing album: {album.title}")
+        self._log.info(f"done processing album: {album.album}")
 
     def commands(self):
         reconvert = Subcommand(
