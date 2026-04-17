@@ -14,7 +14,7 @@ class BeetsLib(BeetsPlugin):
         self.config.add({"opusdir": "/root/Music"})
 
         self.opusdir = Path(self.config["opusdir"].get(str))
-        self.pool = ThreadPool()
+        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 4)
 
         if (
             not self.opusdir.is_dir()
@@ -33,17 +33,17 @@ class BeetsLib(BeetsPlugin):
                 flac_file,
                 opus_file,
             ],
-            capture_output=True,
+            capture_output=False,
         )
         self._log.info(f"done converting {flac_file} to {opus_file}")
 
-    def _replaygain_album(self, files):
-        self._log.info(f"calculating replaygain for files: {files}")
+    def _replaygain_album(self, files, album_name):
+        self._log.info(f"calculating replaygain for album: {album_name}")
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
             capture_output=True,
         )
-        self._log.info(f"done calculating replaygain for files: {files}")
+        self._log.info(f"done calculating replaygain for album: {album_name}")
 
     def commands(self):
         reconvert = Subcommand(
