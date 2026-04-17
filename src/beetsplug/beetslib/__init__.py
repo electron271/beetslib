@@ -15,12 +15,15 @@ class BeetsLib(BeetsPlugin):
         self.config.add({"opusdir": "/root/Music"})
 
         self.opusdir = Path(self.config["opusdir"].get(str))
-        self.pool = ThreadPool(processes=(os.cpu_count() or 1) * 4)
+        self.pool = ThreadPool()
 
         if (
             not self.opusdir.is_dir()
         ):  # im just doing this instead of exists() to raise an error if its a file
             self.opusdir.mkdir(parents=False, exist_ok=True)
+
+        self.register_listener("album_imported", self.import_album)
+        self.register_listener("item_imported", self.import_singleton)
 
     def _flac_to_opus(self, flac_file: Path, opus_file: Path, quiet: bool = False):
         self._log.info(
@@ -55,12 +58,116 @@ class BeetsLib(BeetsPlugin):
         )
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
-            capture_output=False,
+            capture_output=True,
         )
         self._log.info(
             f"done calculating replaygain for album: {album_name}"
         ) if not quiet else self._log.debug(
             f"done calculating replaygain for album: {album_name}"
+        )
+
+    def import_album(self, lib: Library, album: Album):
+        self._log.info(
+            f"converting and adding replaygain data for album: {album.album}"
+        )
+        tracks = album.items()
+
+        replaygain = self.pool.apply_async(
+            self._replaygain_album,
+            (
+                [str(track.filepath) for track in tracks],
+                album.album,
+                True,
+            ),
+        )
+
+        starmap = []
+        for track in tracks:
+            if track.format != "FLAC":  # TODO: add better handling for this probably
+                raise ValueError(f"track {track.filepath} isnt a flac")
+
+            self._log.debug(f"processing track: {track.filepath}")
+            starmap.append(
+                (
+                    track.filepath,
+                    Path(
+                        track.destination(basedir=self.opusdir.__bytes__()).decode()
+                    ).with_suffix(".opus"),
+                    True,
+                )
+            )
+
+        conversion = self.pool.starmap_async(self._flac_to_opus, starmap)
+        tracks = [
+            Path(
+                track.destination(basedir=self.opusdir.__bytes__()).decode()
+            ).with_suffix(".opus")
+            for track in album.items()
+        ]
+
+        conversion.wait()
+        self.pool.apply(
+            self._replaygain_album,
+            (
+                tracks,
+                album.album,
+            ),
+        )
+
+        replaygain.wait()
+        album.store()
+        self._log.info(
+            f"done converting and adding replaygain data for album: {album.album}"
+        )
+
+    def import_singleton(self, lib: Library, item: Item):
+        self._log.info(
+            f"converting and adding replaygain data for singleton: {item.filepath.name}"
+        )
+
+        replaygain = self.pool.apply_async(
+            self._replaygain_album,
+            (
+                [str(item.filepath)],
+                item.filepath.name,
+                True,
+            ),
+        )
+
+        if item.format != "FLAC":  # TODO: add better handling for this probably
+            raise ValueError(f"track {item.filepath} isnt a flac")
+
+        self._log.debug(f"processing track: {item.filepath.name}")
+        conversion = self.pool.apply_async(
+            self._flac_to_opus,
+            (
+                item.filepath,
+                Path(
+                    item.destination(basedir=self.opusdir.__bytes__()).decode()
+                ).with_suffix(".opus"),
+                True,
+            ),
+        )
+
+        tracks = [
+            Path(
+                item.destination(basedir=self.opusdir.__bytes__()).decode()
+            ).with_suffix(".opus")
+        ]
+
+        conversion.wait()
+        self.pool.apply(
+            self._replaygain_album,
+            (
+                tracks,
+                item.filepath.name,
+            ),
+        )
+
+        replaygain.wait()
+        item.store()
+        self._log.info(
+            f"done converting and adding replaygain data for singleton: {item.filepath.name}"
         )
 
     def commands(self):
