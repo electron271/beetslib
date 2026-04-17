@@ -57,6 +57,7 @@ class BeetsLib(BeetsPlugin):
             if track.format != "FLAC":  # TODO: add better handling for this probably
                 raise ValueError(f"track {track.filepath} isnt a flac")
 
+            self._log.debug(f"processing track: {track.filepath}")
             starmap.append(
                 (
                     track.filepath,
