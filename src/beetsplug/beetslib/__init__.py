@@ -55,7 +55,7 @@ class BeetsLib(BeetsPlugin):
         )
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
-            capture_output=True,
+            capture_output=False,
         )
         self._log.info(
             f"done calculating replaygain for album: {album_name}"
