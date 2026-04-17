@@ -60,9 +60,9 @@ class BeetsLib(BeetsPlugin):
             starmap.append(
                 (
                     track.filepath,
-                    Path(track.destination(basedir=self.opusdir).decode()).with_suffix(
-                        ".opus"
-                    ),
+                    Path(
+                        track.destination(basedir=self.opusdir.__bytes__()).decode()
+                    ).with_suffix(".opus"),
                 )
             )
 
