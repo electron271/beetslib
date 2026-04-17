@@ -82,7 +82,7 @@ class BeetsLib(BeetsPlugin):
             help="reconverts and reanalyzes replaygain metadata",
         )
         reconvert.func = self.reconvert
-        return reconvert
+        return [reconvert]
 
     def reconvert(self, lib: Library, opts, args):
         opus_files = [f for f in os.listdir(self.opusdir) if not f.startswith(".")]
