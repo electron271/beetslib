@@ -47,17 +47,17 @@ class BeetsLib(BeetsPlugin):
 
         self._log.info(f"calculating replaygain for album: {album.album}")
         replaygain = self.pool.apply_async(
-            self._replaygain_album, ([str(track.path) for track in tracks],)
+            self._replaygain_album, ([str(track.filepath) for track in tracks],)
         )
 
         starmap = []
         for track in tracks:
             if track.format != "FLAC":  # TODO: add better handling for this probably
-                raise ValueError(f"track {track.path} isnt a flac")
+                raise ValueError(f"track {track.filepath} isnt a flac")
 
             starmap.append(
                 (
-                    track.path,
+                    track.filepath,
                     Path(track.destination(basedir=self.opusdir).decode()).with_suffix(
                         ".opus"
                     ),
