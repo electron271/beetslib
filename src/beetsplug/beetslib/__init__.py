@@ -23,6 +23,9 @@ class BeetsLib(BeetsPlugin):
 
     def _flac_to_opus(self, flac_file: Path, opus_file: Path):
         self._log.info(f"converting {flac_file} to {opus_file}")
+        if not opus_file.parent.exists():
+            opus_file.parent.mkdir(parents=True, exist_ok=True)
+
         subprocess.run(
             [
                 "opusenc",
