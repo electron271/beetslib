@@ -50,9 +50,9 @@ class BeetsLib(BeetsPlugin):
         tracks = album.items()
 
         self._log.info(f"calculating replaygain for album: {album.album}")
-        replaygain = self.pool.apply_async(
-            self._replaygain_album, ([str(track.filepath) for track in tracks],)
-        )
+        # replaygain = self.pool.apply_async(
+        #    self._replaygain_album, ([str(track.filepath) for track in tracks],)
+        # )
 
         starmap = []
         for track in tracks:
@@ -74,8 +74,8 @@ class BeetsLib(BeetsPlugin):
         self._log.info(f"calculating replaygain for converted album: {album.album}")
         self._replaygain_album([str(opus_file) for _, opus_file in starmap])
 
-        if not replaygain.ready():
-            replaygain.wait()
+        # if not replaygain.ready():
+        #    replaygain.wait()
 
         self._log.info(f"done processing album: {album.album}")
 
