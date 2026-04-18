@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
-dependencies = ["beetcamp>=0.24.2", "beets[chroma]>=2.9.0"]
+dependencies = ["beetcamp>=0.24.2", "beets[chroma,lastgenre]>=2.9.0"]
 
 [build-system]
 requires = ["uv_build>=0.11.7,<0.12"]
