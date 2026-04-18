@@ -6,5 +6,5 @@ this is heavily specific for my usecase but if you want to use it for your own t
 
 only config option is `opusdir` defaults to `/root/Music`
 
-`uv tool install --with-executables-from beetcamp --with "beetslib@git+https://github.com/electron271/beetslib" "beets[chroma]"`
+`uv tool install --with-executables-from beetcamp --with "beetslib@git+https://github.com/electron271/beetslib" "beets[chroma,lastgenre]"`
 horrifying
