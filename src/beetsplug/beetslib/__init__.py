@@ -85,6 +85,7 @@ class BeetsLib(BeetsPlugin):
         for track in tracks:
             if track.format != "FLAC":  # TODO: add better handling for this probably
                 self._log.warning(f"track {track.filepath} isnt a flac")
+                continue
 
             self._log.debug(f"processing track: {track.filepath}")
             starmap.append(
@@ -136,6 +137,7 @@ class BeetsLib(BeetsPlugin):
 
         if item.format != "FLAC":  # TODO: add better handling for this probably
             self._log.warning(f"track {item.filepath} isnt a flac")
+            return
 
         self._log.debug(f"processing track: {item.filepath.name}")
         conversion = self.pool.apply_async(
@@ -216,6 +218,7 @@ class BeetsLib(BeetsPlugin):
                     track.format != "FLAC"
                 ):  # TODO: add better handling for this probably
                     self._log.warning(f"track {track.filepath} isnt a flac")
+                    continue
 
                 self._log.debug(f"processing track: {track.filepath}")
                 starmap.append(
@@ -248,6 +251,7 @@ class BeetsLib(BeetsPlugin):
                 singleton.format != "FLAC"
             ):  # TODO: add better handling for this probably
                 self._log.warning(f"track {singleton.filepath} isnt a flac")
+                continue
 
             self._log.debug(f"processing track: {singleton.filepath}")
             needs_replaygain_results.append(
