@@ -135,7 +135,7 @@ class BeetsLib(BeetsPlugin):
         )
 
         if item.format != "FLAC":  # TODO: add better handling for this probably
-            raise ValueError(f"track {item.filepath} isnt a flac")
+            self._log.warning(f"track {item.filepath} isnt a flac")
 
         self._log.debug(f"processing track: {item.filepath.name}")
         conversion = self.pool.apply_async(
@@ -215,7 +215,7 @@ class BeetsLib(BeetsPlugin):
                 if (
                     track.format != "FLAC"
                 ):  # TODO: add better handling for this probably
-                    raise ValueError(f"track {track.filepath} isnt a flac")
+                    self._log.warning(f"track {track.filepath} isnt a flac")
 
                 self._log.debug(f"processing track: {track.filepath}")
                 starmap.append(
@@ -244,19 +244,21 @@ class BeetsLib(BeetsPlugin):
                 )
             )
 
-            if track.format != "FLAC":  # TODO: add better handling for this probably
-                raise ValueError(f"track {track.filepath} isnt a flac")
+            if (
+                singleton.format != "FLAC"
+            ):  # TODO: add better handling for this probably
+                self._log.warning(f"track {singleton.filepath} isnt a flac")
 
-            self._log.debug(f"processing track: {track.filepath}")
+            self._log.debug(f"processing track: {singleton.filepath}")
             needs_replaygain_results.append(
                 (
-                    album,
+                    singleton,
                     self.pool.apply_async(
                         self._flac_to_opus,
                         (
-                            track.filepath,
+                            singleton.filepath,
                             Path(
-                                track.destination(
+                                singleton.destination(
                                     basedir=self.opusdir.__bytes__()
                                 ).decode()
                             ).with_suffix(".opus"),
