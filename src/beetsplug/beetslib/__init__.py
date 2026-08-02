@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import shutil
 import subprocess
 from beets import ui
 from beets.dbcore import FieldQuery
@@ -50,6 +51,17 @@ class BeetsLib(BeetsPlugin):
             f"done converting {flac_file} to {opus_file}"
         )
 
+    def _copy_file(self, src: Path, dst: Path, quiet: bool = False):
+        self._log.info(
+            f"copying {src} to {dst}"
+        ) if not quiet else self._log.debug(f"copying {src} to {dst}")
+        if not dst.parent.exists():
+            dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
+        self._log.info(
+            f"done copying {src} to {dst}"
+        ) if not quiet else self._log.debug(f"done copying {src} to {dst}")
+
     def _replaygain_album(self, files, album_name, quiet: bool = False):
         self._log.info(
             f"calculating replaygain for album: {album_name}"
@@ -83,17 +95,21 @@ class BeetsLib(BeetsPlugin):
 
         starmap = []
         for track in tracks:
-            if track.format != "FLAC":  # TODO: add better handling for this probably
-                self._log.warning(f"track {track.filepath} isnt a flac")
+            dest = Path(
+                track.destination(basedir=self.opusdir.__bytes__()).decode()
+            )
+            if track.format != "FLAC":
+                self._log.warning(f"track {track.filepath} isnt a flac, copying..")
+                starmap.append(
+                    (track.filepath, dest, True)
+                )
                 continue
 
             self._log.debug(f"processing track: {track.filepath}")
             starmap.append(
                 (
                     track.filepath,
-                    Path(
-                        track.destination(basedir=self.opusdir.__bytes__()).decode()
-                    ).with_suffix(".opus"),
+                    dest.with_suffix(".opus"),
                     True,
                 )
             )
@@ -135,26 +151,32 @@ class BeetsLib(BeetsPlugin):
             ),
         )
 
-        if item.format != "FLAC":  # TODO: add better handling for this probably
-            self._log.warning(f"track {item.filepath} isnt a flac")
-            return
-
-        self._log.debug(f"processing track: {item.filepath.name}")
-        conversion = self.pool.apply_async(
-            self._flac_to_opus,
-            (
-                item.filepath,
-                Path(
-                    item.destination(basedir=self.opusdir.__bytes__()).decode()
-                ).with_suffix(".opus"),
-                True,
-            ),
+        dest = Path(
+            item.destination(basedir=self.opusdir.__bytes__()).decode()
         )
+        if item.format != "FLAC":
+            self._log.warning(f"track {item.filepath} isnt a flac, copying..")
+            conversion = self.pool.apply_async(
+                self._copy_file,
+                (
+                    item.filepath,
+                    dest,
+                    True,
+                ),
+            )
+        else:
+            self._log.debug(f"processing track: {item.filepath.name}")
+            conversion = self.pool.apply_async(
+                self._flac_to_opus,
+                (
+                    item.filepath,
+                    dest.with_suffix(".opus"),
+                    True,
+                ),
+            )
 
         tracks = [
-            Path(
-                item.destination(basedir=self.opusdir.__bytes__()).decode()
-            ).with_suffix(".opus")
+            dest.with_suffix(".opus")
         ]
 
         conversion.wait()
@@ -214,19 +236,21 @@ class BeetsLib(BeetsPlugin):
 
             starmap = []
             for track in tracks:
-                if (
-                    track.format != "FLAC"
-                ):  # TODO: add better handling for this probably
-                    self._log.warning(f"track {track.filepath} isnt a flac")
+                dest = Path(
+                    track.destination(basedir=self.opusdir.__bytes__()).decode()
+                )
+                if track.format != "FLAC":
+                    self._log.warning(f"track {track.filepath} isnt a flac, copying..")
+                    starmap.append(
+                        (track.filepath, dest)
+                    )
                     continue
 
                 self._log.debug(f"processing track: {track.filepath}")
                 starmap.append(
                     (
                         track.filepath,
-                        Path(
-                            track.destination(basedir=self.opusdir.__bytes__()).decode()
-                        ).with_suffix(".opus"),
+                        dest.with_suffix(".opus"),
                     )
                 )
             needs_replaygain_results.append(
@@ -247,10 +271,23 @@ class BeetsLib(BeetsPlugin):
                 )
             )
 
-            if (
-                singleton.format != "FLAC"
-            ):  # TODO: add better handling for this probably
-                self._log.warning(f"track {singleton.filepath} isnt a flac")
+            dest = Path(
+                singleton.destination(basedir=self.opusdir.__bytes__()).decode()
+            )
+            if singleton.format != "FLAC":
+                self._log.warning(f"track {singleton.filepath} isnt a flac, copying..")
+                needs_replaygain_results.append(
+                    (
+                        singleton,
+                        self.pool.apply_async(
+                            self._copy_file,
+                            (
+                                singleton.filepath,
+                                dest,
+                            ),
+                        ),
+                    )
+                )
                 continue
 
             self._log.debug(f"processing track: {singleton.filepath}")
@@ -261,11 +298,7 @@ class BeetsLib(BeetsPlugin):
                         self._flac_to_opus,
                         (
                             singleton.filepath,
-                            Path(
-                                singleton.destination(
-                                    basedir=self.opusdir.__bytes__()
-                                ).decode()
-                            ).with_suffix(".opus"),
+                            dest.with_suffix(".opus"),
                         ),
                     ),
                 )
