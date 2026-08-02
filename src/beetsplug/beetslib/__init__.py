@@ -28,8 +28,8 @@ class BeetsLib(BeetsPlugin):
 
     def _flac_to_opus(self, flac_file: Path, opus_file: Path, quiet: bool = False):
         self._log.info(
-            f"converting {flac_file} to {opus_file}"
-        ) if not quiet else self._log.debug(f"converting {flac_file} to {opus_file}")
+            "converting {} to {}", flac_file, opus_file
+        ) if not quiet else self._log.debug("converting {} to {}", flac_file, opus_file)
         if not opus_file.parent.exists():
             opus_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -46,41 +46,41 @@ class BeetsLib(BeetsPlugin):
             capture_output=True,
         )
         self._log.info(
-            f"done converting {flac_file} to {opus_file}"
+            "done converting {} to {}", flac_file, opus_file
         ) if not quiet else self._log.debug(
-            f"done converting {flac_file} to {opus_file}"
+            "done converting {} to {}", flac_file, opus_file
         )
 
     def _copy_file(self, src: Path, dst: Path, quiet: bool = False):
-        self._log.info(
-            f"copying {src} to {dst}"
-        ) if not quiet else self._log.debug(f"copying {src} to {dst}")
+        self._log.info("copying {} to {}", src, dst) if not quiet else self._log.debug(
+            "copying {} to {}", src, dst
+        )
         if not dst.parent.exists():
             dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dst)
         self._log.info(
-            f"done copying {src} to {dst}"
-        ) if not quiet else self._log.debug(f"done copying {src} to {dst}")
+            "done copying {} to {}", src, dst
+        ) if not quiet else self._log.debug("done copying {} to {}", src, dst)
 
     def _replaygain_album(self, files, album_name, quiet: bool = False):
         self._log.info(
-            f"calculating replaygain for album: {album_name}"
+            "calculating replaygain for album: {}", album_name
         ) if not quiet else self._log.debug(
-            f"calculating replaygain for album: {album_name}"
+            "calculating replaygain for album: {}", album_name
         )
         subprocess.run(
             ["rsgain", "custom", "--album", "--tagmode=i", "--opus-mode=s", *files],
             capture_output=True,
         )
         self._log.info(
-            f"done calculating replaygain for album: {album_name}"
+            "done calculating replaygain for album: {}", album_name
         ) if not quiet else self._log.debug(
-            f"done calculating replaygain for album: {album_name}"
+            "done calculating replaygain for album: {}", album_name
         )
 
     def import_album(self, lib: Library, album: Album):
         self._log.info(
-            f"converting and adding replaygain data for album: {album.album}"
+            "converting and adding replaygain data for album: {}", album.album
         )
         tracks = album.items()
 
@@ -95,17 +95,13 @@ class BeetsLib(BeetsPlugin):
 
         starmap = []
         for track in tracks:
-            dest = Path(
-                track.destination(basedir=self.opusdir.__bytes__()).decode()
-            )
+            dest = Path(track.destination(basedir=self.opusdir.__bytes__()).decode())
             if track.format != "FLAC":
-                self._log.warning(f"track {track.filepath} isnt a flac, copying..")
-                starmap.append(
-                    (track.filepath, dest, True)
-                )
+                self._log.warning("track {} isnt a flac, copying..", track.filepath)
+                starmap.append((track.filepath, dest, True))
                 continue
 
-            self._log.debug(f"processing track: {track.filepath}")
+            self._log.debug("processing track: {}", track.filepath)
             starmap.append(
                 (
                     track.filepath,
@@ -134,12 +130,13 @@ class BeetsLib(BeetsPlugin):
         replaygain.wait()
         album.store()
         self._log.info(
-            f"done converting and adding replaygain data for album: {album.album}"
+            "done converting and adding replaygain data for album: {}", album.album
         )
 
     def import_singleton(self, lib: Library, item: Item):
         self._log.info(
-            f"converting and adding replaygain data for singleton: {item.filepath.name}"
+            "converting and adding replaygain data for singleton: {}",
+            item.filepath.name,
         )
 
         replaygain = self.pool.apply_async(
@@ -151,11 +148,9 @@ class BeetsLib(BeetsPlugin):
             ),
         )
 
-        dest = Path(
-            item.destination(basedir=self.opusdir.__bytes__()).decode()
-        )
+        dest = Path(item.destination(basedir=self.opusdir.__bytes__()).decode())
         if item.format != "FLAC":
-            self._log.warning(f"track {item.filepath} isnt a flac, copying..")
+            self._log.warning("track {} isnt a flac, copying..", item.filepath)
             conversion = self.pool.apply_async(
                 self._copy_file,
                 (
@@ -165,7 +160,7 @@ class BeetsLib(BeetsPlugin):
                 ),
             )
         else:
-            self._log.debug(f"processing track: {item.filepath.name}")
+            self._log.debug("processing track: {}", item.filepath.name)
             conversion = self.pool.apply_async(
                 self._flac_to_opus,
                 (
@@ -175,9 +170,7 @@ class BeetsLib(BeetsPlugin):
                 ),
             )
 
-        tracks = [
-            dest.with_suffix(".opus")
-        ]
+        tracks = [dest.with_suffix(".opus")]
 
         conversion.wait()
         self.pool.apply(
@@ -191,7 +184,8 @@ class BeetsLib(BeetsPlugin):
         replaygain.wait()
         item.store()
         self._log.info(
-            f"done converting and adding replaygain data for singleton: {item.filepath.name}"
+            "done converting and adding replaygain data for singleton: {}",
+            item.filepath.name,
         )
 
     def commands(self):
@@ -240,13 +234,11 @@ class BeetsLib(BeetsPlugin):
                     track.destination(basedir=self.opusdir.__bytes__()).decode()
                 )
                 if track.format != "FLAC":
-                    self._log.warning(f"track {track.filepath} isnt a flac, copying..")
-                    starmap.append(
-                        (track.filepath, dest)
-                    )
+                    self._log.warning("track {} isnt a flac, copying..", track.filepath)
+                    starmap.append((track.filepath, dest))
                     continue
 
-                self._log.debug(f"processing track: {track.filepath}")
+                self._log.debug("processing track: {}", track.filepath)
                 starmap.append(
                     (
                         track.filepath,
@@ -275,7 +267,7 @@ class BeetsLib(BeetsPlugin):
                 singleton.destination(basedir=self.opusdir.__bytes__()).decode()
             )
             if singleton.format != "FLAC":
-                self._log.warning(f"track {singleton.filepath} isnt a flac, copying..")
+                self._log.warning("track {} isnt a flac, copying..", singleton.filepath)
                 needs_replaygain_results.append(
                     (
                         singleton,
@@ -290,7 +282,7 @@ class BeetsLib(BeetsPlugin):
                 )
                 continue
 
-            self._log.debug(f"processing track: {singleton.filepath}")
+            self._log.debug("processing track: {}", singleton.filepath)
             needs_replaygain_results.append(
                 (
                     singleton,
