@@ -146,6 +146,9 @@ fetchart = [
     { name = "pillow" },
     { name = "requests" },
 ]
+lastgenre = [
+    { name = "pylast" },
+]
 
 [[package]]
 name = "beetslib"
@@ -153,13 +156,13 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "beetcamp" },
-    { name = "beets", extra = ["chroma"] },
+    { name = "beets", extra = ["chroma", "lastgenre"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "beetcamp", specifier = ">=0.24.2" },
-    { name = "beets", extras = ["chroma"], specifier = ">=2.9.0" },
+    { name = "beets", extras = ["chroma", "lastgenre"], specifier = ">=2.9.0" },
 ]
 
 [[package]]
@@ -583,6 +586,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pylast"
+version = "7.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dc/56/1729aa02df4bf959f31f6bd024775f8be0aaa08fd18a1d2bbdaab3c38e9e/pylast-7.0.2.tar.gz", hash = "sha256:825e2b5d9144c5491d9c353511169a1595813e6a1ad203faf7525cd2d1d1828e", size = 435704, upload-time = "2026-01-19T12:40:01.898Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/94/677dade2b8ed48631de3fd34b320ebfd59b7a66f831640831112d7a7190b/pylast-7.0.2-py3-none-any.whl", hash = "sha256:c995e078670b3a8e3116a31b17d1f0d89c4d020407f6967ee9ffab2aeecd9de7", size = 26773, upload-time = "2026-01-19T12:40:00.48Z" },
+]
+
+[[package]]
 name = "pyrate-limiter"
 version = "4.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -778,9 +793,9 @@ wheels = [
 
 [[package]]
 name = "urllib3"
-version = "2.6.3"
+version = "2.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/24/5f1b3bdffd70275f6661c76461e25f024d5a38a46f04aaca912426a2b1d3/urllib3-2.6.3.tar.gz", hash = "sha256:1b62b6884944a57dbe321509ab94fd4d3b307075e0c2eae991ac71ee15ad38ed", size = 435556, upload-time = "2026-01-07T16:24:43.925Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/08/aaaad47bc4e9dc8c725e68f9d04865dbcb2052843ff09c97b08904852d84/urllib3-2.6.3-py3-none-any.whl", hash = "sha256:bf272323e553dfb2e87d9bfd225ca7b0f467b919d7bbd355436d3fd37cb0acd4", size = 131584, upload-time = "2026-01-07T16:24:42.685Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
 ]
